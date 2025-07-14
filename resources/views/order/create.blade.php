@@ -1,159 +1,1156 @@
-@extends('app')
-@section('content')
-<div class="row">
-    <div class="col-sm-12">
-        <div class="card">
-            <div class="card-body">
-                <h3 class="card-title">Add Order</h3>
-                <form action="{{ route('order.store') }}" method="POST" class="row g-3 needs-validation" novalidate>
-                    @csrf
-                    <div class="col-sm-6">
-                        <div class="row g-3">
-                            <div class="col-sm-12">
-                                <label for="name" class="form-label">Code</label>
-                                <input type="text" class="form-control" name="order_code" value="{{ $code }}" readonly>
-                            </div>
-                            <div class="col-sm-12">
-                                <label for="end_date" class="form-label">Estimation</label>
-                                <input type="date" class="form-control" name="order_end_date" placeholder="Enter your order estimation" required>
-                                <div class="invalid-feedback">Please enter your order estimation</div>
-                                @error('order_end_date')
-                                <small class="text-danger">{{ $message }}</small>
-                                @enderror
-                            </div>
-                            <div class="col-sm-12">
-                                <label for="id_service" class="form-label">Service</label>
-                                <select id="id_service" class="form-control">
-                                    <option value="">Choose Service</option>
-                                    @foreach ($services as $service)
-                                    <option data-price="{{ $service->price }}" value="{{ $service->id }}">{{ $service->service_name }}</option>
-                                    @endforeach
-                                </select>
-                                <div class="invalid-feedback">Please enter your service!</div>
-                            </div>
-                        </div>
-                    </div>
-                    <div class="col-sm-6">
-                        <div class="row g-3">
-                            <div class="col-sm-12">
-                                <label for="customer" class="form-label">Customer</label>
-                                <select name="id_customer" id="customer" class="form-control" required>
-                                    <option value="">Choose Customer</option>
-                                    @foreach ($customers as $customer)
-                                    <option value="{{ $customer->id }}">{{ $customer->customer_name }}</option>
-                                    @endforeach
-                                </select>
-                                <div class="invalid-feedback">Please enter your customer!</div>
-                            </div>
-                            <div class="col-sm-12">
-                                <label for="note" class="form-label">Note</label>
-                                <textarea class="form-control" name="order_note" id="note" cols="30" rows="5"></textarea>
-                            </div>
-                        </div>
-                    </div>
-                    <div align="right">
-                        <button type="button" class="btn btn-primary" id="addRow">Add Service</button>
-                    </div>
-                    <div class="table-responsive">
-                        <table class="table table-stripped" id="myTable">
-                            <thead>
-                                <tr>
-                                    <th>No</th>
-                                    <th>Service</th>
-                                    <th>Price</th>
-                                    <th>Qty (kg)</th>
-                                    <th>Subtotal</th>
-                                    <th>Action</th>
-                                </tr>
-                            </thead>
-                            <tbody></tbody>
-                        </table>
-                    </div>
-                    <p><strong>Total : <span class="textTotal"></span></strong></p>
-                    <input type="hidden" name="total" class="total">
-                    <div class="col-sm-12">
-                        <button type="submit" class="btn btn-primary">Submit</button>
-                        <a href="{{ url()->previous() }}" class="btn btn-secondary">Back</a>
-                    </div>
-                </form>
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{{ $title }}</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            color: #333;
+        }
+
+        .container {
+            max-width: 1400px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+
+        .header {
+            background: rgba(255, 255, 255, 0.95);
+            backdrop-filter: blur(10px);
+            border-radius: 15px;
+            padding: 20px;
+            margin-bottom: 20px;
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.1);
+        }
+
+        .header h1 {
+            text-align: center;
+            color: #4a5568;
+            margin-bottom: 10px;
+            font-size: 2.5em;
+            font-weight: 700;
+        }
+
+        .header .subtitle {
+            text-align: center;
+            color: #718096;
+            font-size: 1.1em;
+        }
+
+        .main-content {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 20px;
+            margin-bottom: 20px;
+        }
+
+        .card {
+            background: rgba(255, 255, 255, 0.95);
+            backdrop-filter: blur(10px);
+            border-radius: 15px;
+            padding: 25px;
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.1);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+        }
+
+        .card h2 {
+            color: #4a5568;
+            margin-bottom: 20px;
+            font-size: 1.8em;
+            font-weight: 600;
+        }
+
+        .form-group {
+            margin-bottom: 15px;
+        }
+
+        .form-group label {
+            display: block;
+            margin-bottom: 5px;
+            font-weight: 500;
+            color: #4a5568;
+        }
+
+        .form-group input,
+        .form-group select,
+        .form-group textarea {
+            width: 100%;
+            padding: 12px;
+            border: 2px solid #e2e8f0;
+            border-radius: 8px;
+            font-size: 16px;
+            transition: all 0.3s ease;
+        }
+
+        .form-group input:focus,
+        .form-group select:focus,
+        .form-group textarea:focus {
+            outline: none;
+            border-color: #667eea;
+            box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
+        }
+
+        .form-row {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 15px;
+        }
+
+        .btn {
+            padding: 12px 24px;
+            border: none;
+            border-radius: 8px;
+            font-size: 16px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        .btn-primary {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+        }
+
+        .btn-primary:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 8px 25px rgba(102, 126, 234, 0.3);
+        }
+
+        .btn-success {
+            background: linear-gradient(135deg, #48bb78 0%, #38a169 100%);
+            color: white;
+        }
+
+        .btn-success:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 8px 25px rgba(72, 187, 120, 0.3);
+        }
+
+        .btn-danger {
+            background: linear-gradient(135deg, #f56565 0%, #e53e3e 100%);
+            color: white;
+        }
+
+        .btn-danger:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 8px 25px rgba(245, 101, 101, 0.3);
+        }
+
+        .btn-warning {
+            background: linear-gradient(135deg, #ed8936 0%, #dd6b20 100%);
+            color: white;
+        }
+
+        .btn-warning:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 8px 25px rgba(237, 137, 54, 0.3);
+        }
+
+        .services-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 15px;
+            margin-bottom: 20px;
+        }
+
+        .service-card {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 20px;
+            border-radius: 12px;
+            text-align: center;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            border: none;
+        }
+
+        .service-card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 12px 35px rgba(102, 126, 234, 0.4);
+        }
+
+        .service-card h3 {
+            font-size: 1.2em;
+            margin-bottom: 10px;
+        }
+
+        .service-card .price {
+            font-size: 1.5em;
+            font-weight: 700;
+        }
+
+        .cart-table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 20px;
+        }
+
+        .cart-table th,
+        .cart-table td {
+            padding: 12px;
+            text-align: left;
+            border-bottom: 1px solid #e2e8f0;
+        }
+
+        .cart-table th {
+            background: #f7fafc;
+            font-weight: 600;
+            color: #4a5568;
+        }
+
+        .cart-table tr:hover {
+            background: #f7fafc;
+        }
+
+        .total-section {
+            background: linear-gradient(135deg, #48bb78 0%, #38a169 100%);
+            color: white;
+            padding: 20px;
+            border-radius: 12px;
+            margin-top: 20px;
+        }
+
+        .total-section h3 {
+            font-size: 1.5em;
+            margin-bottom: 10px;
+        }
+
+        .total-amount {
+            font-size: 2.5em;
+            font-weight: 700;
+        }
+
+        .status-badge {
+            padding: 6px 12px;
+            border-radius: 20px;
+            font-size: 0.9em;
+            font-weight: 500;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        .status-pending {
+            background: #fed7d7;
+            color: #c53030;
+        }
+
+        .status-process {
+            background: #feebc8;
+            color: #dd6b20;
+        }
+
+        .status-ready {
+            background: #c6f6d5;
+            color: #2f855a;
+        }
+
+        .status-delivered {
+            background: #bee3f8;
+            color: #2b6cb0;
+        }
+
+        .transaction-list {
+            max-height: 400px;
+            overflow-y: auto;
+        }
+
+        .transaction-item {
+            background: #f7fafc;
+            padding: 15px;
+            border-radius: 8px;
+            margin-bottom: 10px;
+            border-left: 4px solid #667eea;
+        }
+
+        .transaction-item h4 {
+            color: #4a5568;
+            margin-bottom: 5px;
+        }
+
+        .transaction-item p {
+            color: #718096;
+            margin-bottom: 5px;
+        }
+
+        .modal {
+            display: none;
+            position: fixed;
+            z-index: 1000;
+            left: 0;
+            top: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.5);
+            backdrop-filter: blur(5px);
+        }
+
+        .modal-content {
+            background: white;
+            margin: 5% auto;
+            padding: 30px;
+            border-radius: 15px;
+            width: 90%;
+            max-width: 600px;
+            max-height: 80vh;
+            overflow-y: auto;
+        }
+
+        .close {
+            color: #aaa;
+            float: right;
+            font-size: 28px;
+            font-weight: bold;
+            cursor: pointer;
+            line-height: 1;
+        }
+
+        .close:hover {
+            color: #000;
+        }
+
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 15px;
+            margin-bottom: 20px;
+        }
+
+        .stat-card {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 20px;
+            border-radius: 12px;
+            text-align: center;
+        }
+
+        .stat-card h3 {
+            font-size: 2em;
+            margin-bottom: 10px;
+        }
+
+        .stat-card p {
+            font-size: 1.1em;
+            opacity: 0.9;
+        }
+
+        @media (max-width: 768px) {
+            .main-content {
+                grid-template-columns: 1fr;
+            }
+
+            .form-row {
+                grid-template-columns: 1fr;
+            }
+
+            .header h1 {
+                font-size: 2em;
+            }
+
+            .services-grid {
+                grid-template-columns: 1fr;
+            }
+        }
+
+        .receipt {
+            background: white;
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+            font-family: 'Courier New', monospace;
+        }
+
+        .receipt-header {
+            text-align: center;
+            border-bottom: 2px solid #333;
+            padding-bottom: 10px;
+            margin-bottom: 20px;
+        }
+
+        .receipt-item {
+            display: flex;
+            justify-content: space-between;
+            margin-bottom: 5px;
+        }
+
+        .receipt-total {
+            border-top: 2px solid #333;
+            padding-top: 10px;
+            margin-top: 10px;
+            font-weight: bold;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <!-- Header -->
+        <div class="header">
+            <h1>🧺 Laundry Diri</h1>
+            <p class="subtitle">Laundry Diri - Landry cepat mudah dan terpecaya</p>
+        </div>
+
+        <!-- Statistics -->
+        <div class="stats-grid">
+            <div class="stat-card">
+                <h3 id="totalTransactions">0</h3>
+                <p>Total Transaksi</p>
+            </div>
+            <div class="stat-card">
+                <h3 id="totalRevenue">Rp 0</h3>
+                <p>Total Pendapatan</p>
+            </div>
+            <div class="stat-card">
+                <h3 id="activeOrders">0</h3>
+                <p>Pesanan Aktif</p>
+            </div>
+            <div class="stat-card">
+                <h3 id="completedOrders">0</h3>
+                <p>Pesanan Selesai</p>
             </div>
         </div>
+
+        <!-- Main Content -->
+        <div class="main-content">
+            <!-- Left Panel: New Transaction -->
+            <div class="card">
+                <h2>🛒 Transaksi Baru</h2>
+                
+                <form method="POST" action="" id="transactionForm" class="needs-validation" novalidate>
+                    @csrf
+                    <div class="form-group">
+                        <label for="customerName">Nama Pelanggan</label>
+                        <select name="id_customer" id="customerName" required>
+                            <option value="">Pilih Customer</option>
+                            @foreach ($customers as $customer)
+                            <option data-phone="{{ $customer->phone }}" data-address="{{ $customer->address }}" value="{{ $customer->id }}">{{ $customer->customer_name }}</option>
+                            @endforeach
+                        </select>
+                    </div>
+                    
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label for="customerPhone">No. Telepon</label>
+                            <input type="text" name="phone" id="customerPhone" readonly>
+                        </div>
+                        <div class="form-group">
+                            <label for="customerAddress">Alamat</label>
+                            <input type="text" name="address" id="customerAddress" readonly>
+                        </div>
+                    </div>
+
+                    <div class="form-group">
+                        <label>Pilih Layanan</label>
+                        <div class="services-grid">
+                            @foreach ($services as $service)
+                            <button type="button" class="service-card" onclick="addService('{{ $service->id }}', {{ $service->price }})">
+                                <h3>{{ $service->service_name }}</h3>
+                                <div class="price">Rp {{ $service->price }}/kg</div>
+                            </button>
+                            @endforeach
+                        </div>
+                    </div>
+
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label for="serviceWeight">Berat/Jumlah</label>
+                            <input type="number" name="qty[]" id="serviceWeight" step="any" min="1" required>
+                        </div>
+                        <div class="form-group">
+                            <label for="serviceType">Jenis Layanan</label>
+                            <select id="serviceType" required>
+                                <option value="">Pilih Layanan</option>
+                                @foreach ($services as $service)
+                                <option data-price="{{ $service->price }}" value="{{ $service->id }}">{{ $service->service_name }}</option>
+                                @endforeach
+                            </select>
+                        </div>
+                    </div>
+
+                    <div class="form-group">
+                        <label for="notes">Catatan</label>
+                        <textarea id="notes" rows="3" name="order_note" placeholder="Catatan khusus untuk pesanan..."></textarea>
+                    </div>
+
+                    <button type="button" class="btn btn-primary" onclick="addToCart()" style="width: 100%; margin-bottom: 10px;">
+                        ➕ Tambah ke Keranjang
+                    </button>
+                </form>
+
+                <!-- Cart -->
+                <div id="cartSection" style="display: none;">
+                    <h3>📋 Keranjang Belanja</h3>
+                    <table class="cart-table">
+                        <thead>
+                            <tr>
+                                <th>Layanan</th>
+                                <th>Qty</th>
+                                <th>Harga</th>
+                                <th>Subtotal</th>
+                                <th>Aksi</th>
+                            </tr>
+                        </thead>
+                        <tbody id="cartItems">
+                        </tbody>
+                    </table>
+                    
+                    <div class="total-section">
+                        <h3>Total Pembayaran</h3>
+                        <div class="total-amount" id="totalAmount">Rp 0</div>
+                        <button class="btn btn-success" onclick="processTransaction()" style="width: 100%; margin-top: 15px;">
+                            💳 Proses Transaksi
+                        </button>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Right Panel: Transaction History -->
+            <div class="card">
+                <h2>📊 Riwayat Transaksi</h2>
+                <div class="transaction-list" id="transactionHistory">
+                </div>
+                
+                <button class="btn btn-warning" onclick="showAllTransactions()" style="width: 100%; margin-top: 15px;">
+                    📋 Lihat Semua Transaksi
+                </button>
+            </div>
+        </div>
+
+        <!-- Action Buttons -->
+        <div style="text-align: center; margin-top: 20px;">
+            <button class="btn btn-primary" onclick="showReports()" style="margin: 0 10px;">
+                📈 Laporan Penjualan
+            </button>
+            <button class="btn btn-danger" onclick="clearCart()" style="margin: 0 10px;">
+                🗑️ Bersihkan Keranjang
+            </button>
+        </div>
     </div>
-</div>
 
-<script>
-    const addRow = document.querySelector('#addRow');
-    const tbody = document.querySelector('#myTable tbody');
-    const selectService = document.querySelector('#id_service');
-    
-    addRow.addEventListener('click', ()=>{
-        const optionServices = selectService.options[selectService.selectedIndex];
-        if (!selectService.value) {
-            alert("Please Select service");
-            return;
-        }
-        const priceService = parseInt(optionServices.dataset.price);
-        const nameService = optionServices.textContent;
+    <!-- Modal for Transaction Details -->
+    <div id="transactionModal" class="modal">
+        <div class="modal-content">
+            <span class="close" onclick="closeModal()">&times;</span>
+            <div id="modalContent"></div>
+        </div>
+    </div>
 
-        const tr = document.createElement('tr');
-        let no = 1;
-        tr.innerHTML = `
-            <td>${no}</td>
-            <td><input type="hidden" class="id_services" name="id_service[]" value="${selectService.value}" />${nameService}</td>
-            <td><input type="hidden" class="prices" value="${priceService}" />Rp ${priceService.toLocaleString('id-ID')}</td>
-            <td><input type="number" step="any" min="1" class="form-control qtys" name="qty[]" value="1"></td>
-            <td><input type="hidden" class="subtotals" name="subtotal[]" value="${priceService}" /><span class="textSubtotals">Rp ${priceService.toLocaleString('id-ID')}</span></td>
-            <td><button type="button" class="btn btn-danger btn-sm delRow">Delete</button></td>
-        `;
+        <!-- <script>
+            localStorage.clear();
+        </script> -->
 
-        tbody.appendChild(tr);
-        no++;
-        updateTotal();
-
-        selectService.value = "";
-    });
-
-    tbody.addEventListener('click', (e)=>{
-        if (e.target.classList.contains('delRow')) {
-            const row = e.target.closest('tr');
-            row.remove();
-            updateNo();
-            updateTotal();
-        }
-    });
-
-    tbody.addEventListener('input', (e)=>{
-        if (e.target.classList.contains('qtys')) {
-            const row = e.target.closest('tr');
-            const price = parseInt(row.querySelector('.prices').value) || 0;
-            const qty = parseFloat(e.target.value) || 0;
-            const subtotal = price * qty;
-            row.querySelector('.subtotals').value = subtotal;
-            row.querySelector('.textSubtotals').textContent = `Rp ${subtotal.toLocaleString('id-ID')}`;
-            updateTotal();
-        }
-    });
-
-    function updateNo(){
-        const rows = tbody.querySelectorAll('tr');
-        rows.forEach((row, index)=>{
-            row.cells[0].textContent = index + 1;
-        });
-        
-        no = rows.length + 1;
-    }
-
-    function updateTotal(){
-        const rows = tbody.querySelectorAll('tr');
-        let sum = 0;
-        rows.forEach((row, index)=>{
-            sum += parseInt(row.querySelector('.subtotals').value);
+    <script>
+        const selectCustomer = document.querySelector('#customerName');        
+        selectCustomer.addEventListener('change', ()=>{
+            const optionCustomer = selectCustomer.options[selectCustomer.selectedIndex];
+            const phoneCustomer = optionCustomer.dataset.phone;
+            const addressCustomer = optionCustomer.dataset.address;
+            document.querySelector('#customerPhone').value = phoneCustomer;
+            document.querySelector('#customerAddress').value = addressCustomer;
         });
 
-        document.querySelector('.total').value = sum;
-        document.querySelector('.textTotal').textContent = `Rp ${sum.toLocaleString('id-ID')}`;
-    }
+        let cart = [];
+        let transactions = JSON.parse(localStorage.getItem('laundryTransactions')) || [];
+        let transactionCounter = transactions.length + 1;
 
+        function addService(serviceName, price) {
+            document.getElementById('serviceType').value = serviceName;
+            document.getElementById('serviceWeight').focus();
+        }
 
-</script>
-@endsection
+        function addToCart() {
+            const serviceType = document.getElementById('serviceType').value; //id service
+            const weight = parseFloat(document.getElementById('serviceWeight').value);           
+            const notes = document.getElementById('notes').value;
+
+            if (!serviceType || !weight || weight <= 0) {
+                alert('Mohon lengkapi semua field yang diperlukan!');
+                return;
+            }
+
+            // const prices = {
+            //     'Cuci Kering': 5000,
+            //     'Cuci Setrika': 7000,
+            //     'Setrika Saja': 3000,
+            //     'Dry Clean': 15000,
+            //     'Cuci Sepatu': 25000,
+            //     'Cuci Karpet': 20000
+            // };
+
+            const price = parseInt(document.getElementById('serviceType').dataset.price);
+            const subtotal = price * weight;
+
+            const item = {
+                id: Date.now(),
+                service: nameService,
+                weight: weight,
+                price: price,
+                subtotal: subtotal,
+                notes: notes
+            };
+
+            cart.push(item);
+            updateCartDisplay();
+            
+            // Clear form
+            document.getElementById('serviceType').value = '';
+            document.getElementById('serviceWeight').value = '';
+            document.getElementById('notes').value = '';
+        }
+
+        function updateCartDisplay() {
+            const cartItems = document.getElementById('cartItems');
+            const cartSection = document.getElementById('cartSection');
+            const totalAmount = document.getElementById('totalAmount');
+
+            if (cart.length === 0) {
+                cartSection.style.display = 'none';
+                return;
+            }
+
+            cartSection.style.display = 'block';
+            
+            let html = '';
+            let total = 0;
+
+            cart.forEach(item => {
+                html += `
+                    <tr>
+                        <td>${item.service}</td>
+                        <td>${item.weight}</td>
+                        <td>Rp ${item.price.toLocaleString('id-ID')}</td>
+                        <td>Rp ${item.subtotal.toLocaleString('id-ID')}</td>
+                        <td>
+                            <button class="btn btn-danger" onclick="removeFromCart(${item.id})" style="padding: 5px 10px; font-size: 12px;">
+                                🗑️
+                            </button>
+                        </td>
+                    </tr>
+                `;
+                total += item.subtotal;
+            });
+
+            cartItems.innerHTML = html;
+            totalAmount.textContent = `Rp ${total.toLocaleString('id-ID')}`;
+        }
+
+        function removeFromCart(itemId) {
+            cart = cart.filter(item => item.id !== itemId);
+            updateCartDisplay();
+        }
+
+        function clearCart() {
+            cart = [];
+            updateCartDisplay();
+            document.getElementById('transactionForm').reset();
+        }
+
+        function processTransaction() {
+            const selectCustomer = document.querySelector('#customerName');
+            const optionCustomer = selectCustomer.options[selectCustomer.selectedIndex];
+            const addressCustomer = optionCustomer.dataset.address;
+            const customerName = optionCustomer.textContent;
+            const customerPhone = optionCustomer.dataset.phone;
+            const customerAddress = optionCustomer.dataset.address;
+
+            if (!customerName || !customerPhone || cart.length === 0) {
+                alert('Mohon lengkapi data pelanggan dan pastikan ada item di keranjang!');
+                return;
+            }
+
+            const total = cart.reduce((sum, item) => sum + item.subtotal, 0);
+            
+            const transaction = {
+                id: `TRX-${transactionCounter.toString().padStart(3, '0')}`,
+                customer: {
+                    name: customerName,
+                    phone: customerPhone,
+                    address: customerAddress
+                },
+                items: [...cart],
+                total: total,
+                date: new Date().toISOString(),
+                status: 'New'
+            };
+
+            transactions.push(transaction);
+            localStorage.setItem('laundryTransactions', JSON.stringify(transactions));
+            
+            transactionCounter++;
+            
+            // Show receipt
+            showReceipt(transaction);
+            
+            // Clear form and cart
+            clearCart();
+            updateTransactionHistory();
+            updateStats();
+        }
+
+        function showReceipt(transaction) {
+            const receiptHtml = `
+                <div class="receipt">
+                    <div class="receipt-header">
+                        <h2>🧺 LAUNDRY RECEIPT</h2>
+                        <p>ID: ${transaction.id}</p>
+                        <p>Tanggal: ${new Date(transaction.date).toLocaleString('id-ID')}</p>
+                    </div>
+                    
+                    <div style="margin-bottom: 20px;">
+                        <strong>Pelanggan:</strong><br>
+                        ${transaction.customer.name}<br>
+                        ${transaction.customer.phone}<br>
+                        ${transaction.customer.address}
+                    </div>
+                    
+                    <div style="margin-bottom: 20px;">
+                        <strong>Detail Pesanan:</strong><br>
+                        ${transaction.items.map(item => `
+                            <div class="receipt-item">
+                                <span>${item.service} (${item.weight} ${item.service.includes('Sepatu') ? 'pasang' : item.service.includes('Karpet') ? 'm²' : 'kg'})</span>
+                                <span>Rp ${item.subtotal.toLocaleString('id-ID')}</span>
+                            </div>
+                        `).join('')}
+                    </div>
+                    
+                    <div class="receipt-total">
+                        <div class="receipt-item">
+                            <span>TOTAL:</span>
+                            <span>Rp ${transaction.total.toLocaleString('id-ID')}</span>
+                        </div>
+                    </div>
+                    
+                    <div style="text-align: center; margin-top: 20px;">
+                        <p>Terima kasih atas kepercayaan Anda!</p>
+                        <p>Barang akan siap dalam 1-2 hari kerja</p>
+                    </div>
+                </div>
+                
+                <div style="text-align: center; margin-top: 20px;">
+                    <button class="btn btn-primary" onclick="printReceipt()">🖨️ Cetak Struk</button>
+                    <button class="btn btn-success" onclick="closeModal()">✅ Selesai</button>
+                </div>
+            `;
+            
+            document.getElementById('modalContent').innerHTML = receiptHtml;
+            document.getElementById('transactionModal').style.display = 'block';
+        }
+
+        function printReceipt() {
+            window.print();
+        }
+
+        function updateTransactionHistory() {
+            const historyContainer = document.getElementById('transactionHistory');
+            const recentTransactions = transactions.slice(-5).reverse();
+            
+            const html = recentTransactions.map(transaction => `
+                <div class="transaction-item">
+                    <h4>${transaction.id} - ${transaction.customer.name}</h4>
+                    <p>📞 ${transaction.customer.phone}</p>
+                    <p>🛍️ ${transaction.items.map(item => `${item.service} - ${item.weight}${item.service.includes('Sepatu') ? 'pasang' : item.service.includes('Karpet') ? 'm²' : 'kg'}`).join(', ')}</p>
+                    <p>💰 Rp ${transaction.total.toLocaleString('id-ID')}</p>
+                    <p>📅 ${new Date(transaction.date).toLocaleString('id-ID')}</p>
+                    <span class="status-badge status-${transaction.status}">${getStatusText(transaction.status)}</span>
+                </div>
+            `).join('');
+            
+            historyContainer.innerHTML = html || '<p>Belum ada transaksi</p>';
+        }
+
+        function getStatusText(status) {
+            const statusMap = {
+                '0': 'Baru',
+                '1': 'Selesai'
+            };
+            return statusMap[status] || status;
+        }
+
+        function updateStats() {
+            const totalTransactions = transactions.length;
+            const totalRevenue = transactions.reduce((sum, t) => sum + t.total, 0);
+            const activeOrders = transactions.filter(t => t.status !== 'delivered').length;
+            const completedOrders = transactions.filter(t => t.status === 'delivered').length;
+            
+            document.getElementById('totalTransactions').textContent = totalTransactions;
+            document.getElementById('totalRevenue').textContent = `Rp ${totalRevenue.toLocaleString('id-ID')}`;
+            document.getElementById('activeOrders').textContent = activeOrders;
+            document.getElementById('completedOrders').textContent = completedOrders;
+        }
+
+        function showAllTransactions() {
+            const allTransactionsHtml = `
+                <h2>📋 Semua Transaksi</h2>
+                <div style="max-height: 400px; overflow-y: auto;">
+                    ${transactions.map(transaction => `
+                        <div class="transaction-item">
+                            <h4>${transaction.id} - ${transaction.customer.name}</h4>
+                            <p>📞 ${transaction.customer.phone}</p>
+                            <p>🛍️ ${transaction.items.map(item => `${item.service} - ${item.weight}${item.service.includes('Sepatu') ? 'pasang' : item.service.includes('Karpet') ? 'm²' : 'kg'}`).join(', ')}</p>
+                            <p>💰 Rp ${transaction.total.toLocaleString('id-ID')}</p>
+                            <p>📅 ${new Date(transaction.date).toLocaleString('id-ID')}</p>
+                            <span class="status-badge status-${transaction.status}">${getStatusText(transaction.status)}</span>
+                            <button class="btn btn-primary" onclick="updateTransactionStatus('${transaction.id}')" style="margin-top: 10px; padding: 5px 15px; font-size: 12px;">
+                                📝 Update Status
+                            </button>
+                        </div>
+                    `).join('')}
+                </div>
+            `;
+            
+            document.getElementById('modalContent').innerHTML = allTransactionsHtml;
+            document.getElementById('transactionModal').style.display = 'block';
+        }
+
+        function showReports() {
+            const today = new Date();
+            const thisMonth = today.getMonth();
+            const thisYear = today.getFullYear();
+            
+            const monthlyTransactions = transactions.filter(t => {
+                const tDate = new Date(t.date);
+                return tDate.getMonth() === thisMonth && tDate.getFullYear() === thisYear;
+            });
+            
+            const monthlyRevenue = monthlyTransactions.reduce((sum, t) => sum + t.total, 0);
+            
+            const serviceStats = {};
+            transactions.forEach(t => {
+                t.items.forEach(item => {
+                    if (!serviceStats[item.service]) {
+                        serviceStats[item.service] = { count: 0, revenue: 0 };
+                    }
+                    serviceStats[item.service].count++;
+                    serviceStats[item.service].revenue += item.subtotal;
+                });
+            });
+            
+            const reportsHtml = `
+                <h2>📈 Laporan Penjualan</h2>
+                
+                <div class="stats-grid" style="margin-bottom: 20px;">
+                    <div class="stat-card">
+                        <h3>${transactions.length}</h3>
+                        <p>Total Transaksi</p>
+                    </div>
+                    <div class="stat-card">
+                        <h3>${monthlyTransactions.length}</h3>
+                        <p>Transaksi Bulan Ini</p>
+                    </div>
+                    <div class="stat-card">
+                        <h3>Rp ${monthlyRevenue.toLocaleString('id-ID')}</h3>
+                        <p>Pendapatan Bulan Ini</p>
+                    </div>
+                </div>
+                
+                <h3>📊 Statistik Layanan</h3>
+                <table class="cart-table">
+                    <thead>
+                        <tr>
+                            <th>Layanan</th>
+                            <th>Jumlah Order</th>
+                            <th>Total Pendapatan</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        ${Object.entries(serviceStats).map(([service, stats]) => `
+                            <tr>
+                                <td>${service}</td>
+                                <td>${stats.count}</td>
+                                <td>Rp ${stats.revenue.toLocaleString('id-ID')}</td>
+                            </tr>
+                        `).join('')}
+                    </tbody>
+                </table>
+            `;
+            
+            document.getElementById('modalContent').innerHTML = reportsHtml;
+            document.getElementById('transactionModal').style.display = 'block';
+        }
+
+        function manageServices() {
+            const servicesHtml = `
+                <h2>⚙️ Kelola Layanan</h2>
+                <p>Fitur ini memungkinkan Anda mengelola jenis layanan dan harga.</p>
+                
+                <table class="cart-table">
+                    <thead>
+                        <tr>
+                            <th>Layanan</th>
+                            <th>Harga</th>
+                            <th>Satuan</th>
+                            <th>Status</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr>
+                            <td>Cuci Kering</td>
+                            <td>Rp 5.000</td>
+                            <td>per kg</td>
+                            <td><span class="status-badge status-ready">Aktif</span></td>
+                        </tr>
+                        <tr>
+                            <td>Cuci Setrika</td>
+                            <td>Rp 7.000</td>
+                            <td>per kg</td>
+                            <td><span class="status-badge status-ready">Aktif</span></td>
+                        </tr>
+                        <tr>
+                            <td>Setrika Saja</td>
+                            <td>Rp 3.000</td>
+                            <td>per kg</td>
+                            <td><span class="status-badge status-ready">Aktif</span></td>
+                        </tr>
+                        <tr>
+                            <td>Dry Clean</td>
+                            <td>Rp 15.000</td>
+                            <td>per kg</td>
+                            <td><span class="status-badge status-ready">Aktif</span></td>
+                        </tr>
+                        <tr>
+                            <td>Cuci Sepatu</td>
+                            <td>Rp 25.000</td>
+                            <td>per pasang</td>
+                            <td><span class="status-badge status-ready">Aktif</span></td>
+                        </tr>
+                        <tr>
+                            <td>Cuci Karpet</td>
+                            <td>Rp 20.000</td>
+                            <td>per m²</td>
+                            <td><span class="status-badge status-ready">Aktif</span></td>
+                        </tr>
+                    </tbody>
+                </table>
+                
+                <div style="text-align: center; margin-top: 20px;">
+                    <button class="btn btn-primary" onclick="alert('Fitur akan segera tersedia!')">
+                        ➕ Tambah Layanan Baru
+                    </button>
+                </div>
+            `;
+            
+            document.getElementById('modalContent').innerHTML = servicesHtml;
+            document.getElementById('transactionModal').style.display = 'block';
+        }
+
+        function updateTransactionStatus(transactionId) {
+            const transaction = transactions.find(t => t.id === transactionId);
+            if (!transaction) return;
+            
+            const statusOptions = [
+                { value: '0', text: 'New' },
+                { value: '1', text: 'Selesai' }
+            ];
+            
+            const statusHtml = `
+                <h2>📝 Update Status Transaksi</h2>
+                <h3>${transaction.id} - ${transaction.customer.name}</h3>
+                <p>Status saat ini: <span class="status-badge status-${transaction.status}">${getStatusText(transaction.status)}</span></p>
+                
+                <div class="form-group">
+                    <label>Pilih Status Baru:</label>
+                    <select id="newStatus" style="width: 100%; padding: 10px; margin: 10px 0;">
+                        ${statusOptions.map(option => `
+                            <option value="${option.value}" ${transaction.status === option.value ? 'selected' : ''}>
+                                ${option.text}
+                            </option>
+                        `).join('')}
+                    </select>
+                </div>
+                
+                <div style="text-align: center; margin-top: 20px;">
+                    <button class="btn btn-success" onclick="saveStatusUpdate('${transactionId}')">
+                        ✅ Simpan Update
+                    </button>
+                    <button class="btn btn-danger" onclick="closeModal()" style="margin-left: 10px;">
+                        ❌ Batal
+                    </button>
+                </div>
+            `;
+            
+            document.getElementById('modalContent').innerHTML = statusHtml;
+            document.getElementById('transactionModal').style.display = 'block';
+        }
+
+        function saveStatusUpdate(transactionId) {
+            const newStatus = document.getElementById('newStatus').value;
+            const transactionIndex = transactions.findIndex(t => t.id === transactionId);
+            
+            if (transactionIndex !== -1) {
+                transactions[transactionIndex].status = newStatus;
+                localStorage.setItem('laundryTransactions', JSON.stringify(transactions));
+                updateTransactionHistory();
+                updateStats();
+                closeModal();
+                alert('Status berhasil diupdate!');
+            }
+        }
+
+        function closeModal() {
+            document.getElementById('transactionModal').style.display = 'none';
+        }
+
+        function formatNumber(input) {
+            // Replace comma with dot for decimal separator
+            let value = input.value.replace(',', '.');
+            
+            // Ensure only valid decimal number
+            if (!/^\d*\.?\d*$/.test(value)) {
+                value = value.slice(0, -1);
+            }
+            
+            // Update input value
+            input.value = value;
+        }
+
+        function parseDecimal(value) {
+            // Handle both comma and dot as decimal separator
+            return parseFloat(value.toString().replace(',', '.')) || 0;
+        }
+
+        // Initialize the application
+        document.addEventListener('DOMContentLoaded', function() {
+            updateTransactionHistory();
+            updateStats();
+            
+            // Add event listener for weight input to handle decimal with comma
+            const weightInput = document.getElementById('serviceWeight');
+            weightInput.addEventListener('input', function() {
+                formatNumber(this);
+            });
+            
+            // Close modal when clicking outside
+            window.onclick = function(event) {
+                const modal = document.getElementById('transactionModal');
+                if (event.target === modal) {
+                    closeModal();
+                }
+            };
+        });
+
+        // Update addToCart function to handle decimal with comma
+        function addToCart() {
+            // const serviceType = document.getElementById('serviceType').value;
+            // console.log(serviceType);
+            
+            const selectService = document.querySelector('#serviceType');
+            const optionService = selectService.options[selectService.selectedIndex];
+            const nameService = optionService.textContent;
+            const priceService = parseInt(optionService.dataset.price);
+            const weightValue = document.getElementById('serviceWeight').value;
+            const weight = parseDecimal(weightValue);
+            const notes = document.getElementById('notes').value;
+
+            if (!serviceType || !weightValue || weight <= 0) {
+                alert('Mohon lengkapi semua field yang diperlukan!');
+                return;
+            }
+
+            // const price = prices[serviceType];
+            const subtotal = priceService * weight;
+
+            const item = {
+                id: Date.now(),
+                service: nameService,
+                weight: weight,
+                price: priceService,
+                subtotal: subtotal,
+                notes: notes
+            };
+
+            cart.push(item);
+            updateCartDisplay();
+            
+            // Clear form
+            document.getElementById('serviceType').value = '';
+            document.getElementById('serviceWeight').value = '';
+            document.getElementById('notes').value = '';
+        }
+
+        // Update cart display to show decimal properly
+        function updateCartDisplay() {
+            
+            const cartItems = document.getElementById('cartItems');
+            const cartSection = document.getElementById('cartSection');
+            const totalAmount = document.getElementById('totalAmount');
+
+            if (cart.length === 0) {
+                cartSection.style.display = 'none';
+                return;
+            }
+
+            cartSection.style.display = 'block';
+            
+            let html = '';
+            let total = 0;
+
+            cart.forEach(item => {
+                const unit = item.service.includes('Sepatu') ? 'pasang' : 
+                           item.service.includes('Karpet') ? 'm²' : 'kg';
+                
+                // Format weight to show decimal properly
+                const formattedWeight = item.weight % 1 === 0 ? 
+                    item.weight.toString() : 
+                    item.weight.toFixed(1).replace('.', ',');
+                
+                html += `
+                    <tr>
+                        <td>${item.service}</td>
+                        <td>${formattedWeight} ${unit}</td>
+                        <td>Rp ${item.price.toLocaleString('id-ID')}</td>
+                        <td>Rp ${item.subtotal.toLocaleString('id-ID')}</td>
+                        <td>
+                            <button class="btn btn-danger" onclick="removeFromCart(${item.id})" style="padding: 5px 10px; font-size: 12px;">
+                                🗑️
+                            </button>
+                        </td>
+                    </tr>
+                `;
+                total += item.subtotal;
+            });
+
+            cartItems.innerHTML = html;
+            totalAmount.textContent = `Rp ${total.toLocaleString('id-ID')}`;
+        }
+
+        // Add some sample data for demonstration
+        // function addSampleData() {
+        //     const sampleTransactions = [
+        //         {
+        //             id: 'TRX-001',
+        //             customer: { name: 'John Doe', phone: '0812-3456-7890', address: 'Jl. Merdeka 123' },
+        //             items: [{ service: 'Cuci Setrika', weight: 2.5, price: 7000, subtotal: 17500 }],
+        //             total: 17500,
+        //             date: new Date().toISOString(),
+        //             status: 'process'
+        //         },
+        //         {
+        //             id: 'TRX-002',
+        //             customer: { name: 'Jane Smith', phone: '0813-7654-3210', address: 'Jl. Sudirman 456' },
+        //             items: [{ service: 'Cuci Kering', weight: 3, price: 5000, subtotal: 15000 }],
+        //             total: 15000,
+        //             date: new Date(Date.now() - 3600000).toISOString(),
+        //             status: 'ready'
+        //         }
+        //     ];
+            
+        //     if (transactions.length === 0) {
+        //         transactions = sampleTransactions;
+        //         localStorage.setItem('laundryTransactions', JSON.stringify(transactions));
+        //         transactionCounter = transactions.length + 1;
+        //     }
+        // }
+
+        // Initialize with sample data
+        // addSampleData();
+    </script>
