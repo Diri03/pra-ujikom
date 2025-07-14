@@ -29,11 +29,7 @@ class TransOrderController extends Controller
         $title = "Transaction Order";
         $customers = Customers::orderBy('id', 'desc')->get();
         $services = TypeOfServices::orderBy('id', 'desc')->get();
-        $today = Carbon::now()->format('dmY');
-        $countDay = TransOrders::whereDate('created_at', now())->count() + 1;
-        $runningNumber = str_pad($countDay, 3, '0', STR_PAD_LEFT);
-        $code = 'TR-' . $today . '-' . $runningNumber;
-        return view('order.create', compact('title', 'customers', 'code', 'services'));
+        return view('order.create', compact('title', 'customers', 'services'));
 
     }
 
@@ -61,6 +57,10 @@ class TransOrderController extends Controller
         //         'total' => 'required|numeric'
         //     ]);
         // }
+        $today = Carbon::now()->format('dmY');
+        $countDay = TransOrders::whereDate('created_at', now())->count() + 1;
+        $runningNumber = str_pad($countDay, 3, '0', STR_PAD_LEFT);
+        $code = 'TR-' . $today . '-' . $runningNumber;
 
         if (empty($request->total)) {
             Alert::error('Oops...', 'Please Add Service Packet');
@@ -69,7 +69,7 @@ class TransOrderController extends Controller
 
         $order = TransOrders::create([
             'id_customer' => $request->id_customer,
-            'order_code' => $request->order_code,
+            'order_code' => $code,
             'order_end_date' => $request->order_end_date,
             'order_note' => $request->order_note,
             'total' => $request->total

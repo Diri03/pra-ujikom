@@ -27,7 +27,7 @@
                                 <td>{{ $order->customer->customer_name }}</td>
                                 <td>{{ $order->created_at }}</td>
                                 <td>{{ $order->order_end_date }}</td>
-                                <td class="text-info">{{ $order->status_text }}</td>
+                                <td class="{{ $order->order_status == 0 ? 'text-info' : 'text-success' }}">{{ $order->status_text }}</td>
                                 <td>
                                     <a href="{{ route('order.edit', $order->id) }}" class="btn btn-success btn-sm">Edit</a>
                                     <form action="{{ route('order.destroy', $order->id) }}" method="post" id="delete-form-{{ $order->id }}" class="d-inline">
