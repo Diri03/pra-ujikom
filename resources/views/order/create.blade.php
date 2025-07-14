@@ -247,7 +247,7 @@
         }
 
         .status-process {
-            background: #feebc8;
+            background: #feebc8;`
             color: #dd6b20;
         }
 
