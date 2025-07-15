@@ -27,9 +27,13 @@ class TransOrderController extends Controller
     public function create()
     {
         $title = "Transaction Order";
+        $today = Carbon::now()->format('dmY');
+        $countDay = TransOrders::whereDate('created_at', now())->count() + 1;
+        $runningNumber = str_pad($countDay, 3, '0', STR_PAD_LEFT);
+        $code = 'TR-' . $today . '-' . $runningNumber;
         $customers = Customers::orderBy('id', 'desc')->get();
         $services = TypeOfServices::orderBy('id', 'desc')->get();
-        return view('order.create', compact('title', 'customers', 'services'));
+        return view('order.create', compact('title', 'customers', 'services', 'code'));
 
     }
 
@@ -38,30 +42,6 @@ class TransOrderController extends Controller
      */
     public function store(Request $request)
     {
-        // $dataValidated = $request->validate([
-        //     'id_customer' => 'required|numeric|exists:customers,id',
-        //     'order_code' => 'required|string|unique:trans_orders,order_code',
-        //     'order_end_date' => 'required|date',
-        //     'order_note' => 'nullable|string',
-        //     'order_pay' => 'nullable|numeric',
-        //     'order_change' => 'nullable|numeric',
-        //     'total' => 'required|numeric'
-        // ]);
-
-        // $order = TransOrders::create($dataValidated);
-        // $id_order = $order->id;
-        // foreach ($request->id_service as $key => $idService) {
-        //     $dataValidated2 = $request->validate([
-        //         'id_service' => 'required|numeric|exists:services,id',
-        //         '' => 'nullable|numeric',
-        //         'total' => 'required|numeric'
-        //     ]);
-        // }
-        $today = Carbon::now()->format('dmY');
-        $countDay = TransOrders::whereDate('created_at', now())->count() + 1;
-        $runningNumber = str_pad($countDay, 3, '0', STR_PAD_LEFT);
-        $code = 'TR-' . $today . '-' . $runningNumber;
-
         if (empty($request->total)) {
             Alert::error('Oops...', 'Please Add Service Packet');
             return back();
@@ -69,7 +49,8 @@ class TransOrderController extends Controller
 
         $order = TransOrders::create([
             'id_customer' => $request->id_customer,
-            'order_code' => $code,
+            'order_code' => $request->order_code,
+            'order_date' => Carbon::now(),
             'order_end_date' => $request->order_end_date,
             'order_note' => $request->order_note,
             'total' => $request->total
@@ -96,7 +77,6 @@ class TransOrderController extends Controller
     {
         $title = "Transaction Order";
         $order = TransOrders::with(['customer', 'details.service'])->findOrFail($id);
-        // dd($order->details);
         return view('order.show', compact('title', 'order'));
     }
 
@@ -143,5 +123,14 @@ class TransOrderController extends Controller
         $order->delete();
         toast('Delete data order successfully', 'success');
         return redirect()->route('order.index')->with('success', 'Delete data order successfully');
+    }
+
+    public function printStruk(string $id)
+    {
+        $details = TransOrders::with(['customer', 'details.service'])->where('id', $id)->first();
+        // debuging
+        // return $details;
+        // dd($details);
+        return view('order.print', compact('details'));
     }
 }

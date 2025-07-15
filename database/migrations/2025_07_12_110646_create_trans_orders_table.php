@@ -14,6 +14,7 @@ return new class () extends Migration {
             $table->id();
             $table->unsignedBigInteger('id_customer');
             $table->string('order_code', 50);
+            $table->date('order_date');
             $table->date('order_end_date');
             $table->tinyInteger('order_status')->default(0);
             $table->text('order_note')->nullable();

@@ -15,9 +15,9 @@ class DatabaseSeeder extends Seeder
     {
         // User::factory(10)->create();
 
-        $this->call(LevelsSeeder::class);
-        $this->call(UsersSeeder::class);
-        // $this->call(TypeOfServicesSeeder::class);
+        // $this->call(LevelsSeeder::class);
+        // $this->call(UsersSeeder::class);
+        $this->call(TypeOfServicesSeeder::class);
 
         // User::factory()->create([
         //     'name' => 'Test User',
