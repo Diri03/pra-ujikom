@@ -2,6 +2,10 @@
 
 namespace App\Http\Controllers;
 
+use App\Models\Customers;
+use App\Models\TransOrders;
+use App\Models\TypeOfServices;
+use App\Models\User;
 use Illuminate\Http\Request;
 
 class DashboardController extends Controller
@@ -12,7 +16,11 @@ class DashboardController extends Controller
     public function index()
     {
         $title = "Dashboard";
-        return view('dashboard.index', compact('title'));
+        $orders = TransOrders::with(['customer', 'details.service'])->take(3)->get();
+        $customers = Customers::all();
+        $services = TypeOfServices::all();
+        $users = User::all();
+        return view('dashboard.index', compact('title', 'orders', 'customers', 'services', 'users'));
     }
 
     /**
