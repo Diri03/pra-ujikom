@@ -3,6 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="csrf-token" content="{{ csrf_token() }}" />
     <title>{{ $title }}</title>
     <style>
         * {
@@ -428,7 +429,7 @@
 
                 <form method="POST" action="{{ route('order.store') }}" id="transactionForm" class="needs-validation" novalidate>
                     @csrf
-                    <input type="hidden" name="order_code" value="{{ $code }}">
+                    <input type="hidden" id="code" name="order_code" value="{{ $code }}">
                     <div class="form-group">
                         <label for="customerName">Nama Pelanggan</label>
                         <select name="id_customer" id="customerName" required>
@@ -508,7 +509,7 @@
                             <h3>Total Pembayaran</h3>
                             <div class="total-amount" id="totalAmount">Rp 0</div>
                             <input type="hidden" name="total" id="totalValue">
-                            <button type="button" class="btn btn-success" onclick="processTransaction()" style="width: 100%; margin-top: 15px;">
+                            <button type="button" class="btn btn-success" id="transactionButton" onclick="processTransaction()" style="width: 100%; margin-top: 15px;">
                                 💳 Proses Transaksi
                             </button>
                         </div>
@@ -618,25 +619,39 @@
             const total = cart.reduce((sum, item) => sum + item.subtotal, 0);
 
             const transaction = {
-                id: `TRX-${transactionCounter.toString().padStart(3, '0')}`,
-                customer: {
-                    name: customerName,
-                    phone: customerPhone,
-                    address: customerAddress
-                },
+                id_customer: optionCustomer.value,
+                order_code: document.getElementById('code').value,
+                order_date: new Date()toISOString(),
+                order_end_date: new Date().setDate(today.getDate() + 2)toISOString(),
+                order_note: document.getElementById('notes').value,
                 items: [...cart],
                 total: total,
-                date: new Date().toISOString(),
-                status: '0'
+                order_status: '0'
             };
 
             transactions.push(transaction);
             localStorage.setItem('laundryTransactions', JSON.stringify(transactions));
+            
+            const token = document.querySelector('meta[name="csrf-token"]').getAttribute("content");
+            fetch('/order', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'X-CSRF-TOKEN': token,
+                },
+
+                body: JSON.stringify(transactions),
+            }).then(response => response.json()).then(function(result){
+                console.log(result);
+                
+            }).catch(error => {
+                console.log(error);
+                
+            });
 
             transactionCounter++;
 
             // Show receipt
-            showReceipt(transaction);
 
             document.querySelector('#transactionForm').submit();
 
@@ -644,55 +659,6 @@
             clearCart();
             updateTransactionHistory();
             updateStats();
-        }
-
-        function showReceipt(transaction) {
-            const receiptHtml = `
-                <div class="receipt">
-                    <div class="receipt-header">
-                        <h2>🧺 LAUNDRY RECEIPT</h2>
-                        <p>ID: ${transaction.id}</p>
-                        <p>Tanggal: ${new Date(transaction.date).toLocaleString('id-ID')}</p>
-                    </div>
-
-                    <div style="margin-bottom: 20px;">
-                        <strong>Pelanggan:</strong><br>
-                        ${transaction.customer.name}<br>
-                        ${transaction.customer.phone}<br>
-                        ${transaction.customer.address}
-                    </div>
-
-                    <div style="margin-bottom: 20px;">
-                        <strong>Detail Pesanan:</strong><br>
-                        ${transaction.items.map(item => `
-                            <div class="receipt-item">
-                                <span>${item.service} (${item.weight} ${item.service.includes('Sepatu') ? 'pasang' : item.service.includes('Karpet') ? 'm²' : 'kg'})</span>
-                                <span>Rp ${item.subtotal.toLocaleString('id-ID')}</span>
-                            </div>
-                        `).join('')}
-                    </div>
-
-                    <div class="receipt-total">
-                        <div class="receipt-item">
-                            <span>TOTAL:</span>
-                            <span>Rp ${transaction.total.toLocaleString('id-ID')}</span>
-                        </div>
-                    </div>
-
-                    <div style="text-align: center; margin-top: 20px;">
-                        <p>Terima kasih atas kepercayaan Anda!</p>
-                        <p>Barang akan siap dalam 1-2 hari kerja</p>
-                    </div>
-                </div>
-
-                <div style="text-align: center; margin-top: 20px;">
-                    <a href="" class="btn btn-primary" >🖨️ Cetak Struk</a>
-                    <button class="btn btn-success" onclick="closeModal()">✅ Selesai</button>
-                </div>
-            `;
-
-            document.getElementById('modalContent').innerHTML = receiptHtml;
-            document.getElementById('transactionModal').style.display = 'block';
         }
 
         // ambil  5 transaksi terakhir lalu join data baru
@@ -941,11 +907,9 @@
             const subtotal = priceService * weight;
 
             const item = {
-                id: Date.now(),
-                idService: idService,
-                service: nameService,
-                weight: weight,
-                price: priceService,
+                id_order: 
+                id_service: idService,
+                qty: weight,
                 subtotal: subtotal,
             };
 

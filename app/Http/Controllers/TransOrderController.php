@@ -71,6 +71,7 @@ class TransOrderController extends Controller
         $order = TransOrders::create([
             'id_customer' => $request->id_customer,
             'order_code' => $request->order_code,
+            'order_date' => Carbon::now(),
             'order_end_date' => Carbon::now()->addDays(2),
             'order_note' => $request->order_note,
             'total' => $request->total

@@ -11,6 +11,7 @@ class TransOrders extends Model
     protected $fillable = [
         'id_customer',
         'order_code',
+        'order_date',
         'order_end_date',
         'order_status',
         'order_note',

@@ -11,10 +11,22 @@ class ReportController extends Controller
     /**
      * Display a listing of the resource.
      */
-    public function index()
+    public function index(Request $request)
     {
         $title = 'Report';
-        $details = TransOrderDetails::with(['order.customer', 'service'])->orderBy('id', 'desc')->get();
+        if ($request->date_start && $request->date_end) { 
+            $startDate = $request->date_start;
+            $endDate = $request->date_end;
+
+            $details = TransOrderDetails::with(['order.customer', 'service'])
+                ->whereDate('order_date', '>=', $startDate)
+                ->whereDate('order_date', '<=', $endDate) // 
+                ->get();
+
+            return view('report.index', compact('title', 'details'));
+        }
+
+        $details = TransOrderDetails::with(['order.customer', 'service'])->get();
         return view('report.index', compact('details', 'title'));
     }
 
@@ -66,7 +78,7 @@ class ReportController extends Controller
         //
     }
 
-    public function filter(Request $request){
-        return;
-    }
+    // public function filter(Request $request){
+        
+    // }
 }
