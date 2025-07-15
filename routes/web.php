@@ -16,3 +16,5 @@ Route::resource('user', App\Http\Controllers\UserController::class);
 Route::resource('service', App\Http\Controllers\TypeOfServiceController::class);
 Route::resource('customer', App\Http\Controllers\CustomerController::class);
 Route::resource('order', App\Http\Controllers\TransOrderController::class);
+Route::resource('report', App\Http\Controllers\ReportController::class);
+Route::get("print_struk/{id}", [App\Http\Controllers\TransOrderController::class, 'printStruk'] )->name('print_struk');

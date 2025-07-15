@@ -428,6 +428,7 @@
 
                 <form method="POST" action="{{ route('order.store') }}" id="transactionForm" class="needs-validation" novalidate>
                     @csrf
+                    <input type="hidden" name="order_code" value="{{ $code }}">
                     <div class="form-group">
                         <label for="customerName">Nama Pelanggan</label>
                         <select name="id_customer" id="customerName" required>
@@ -479,7 +480,7 @@
 
                     <div class="form-group">
                         <label for="notes">Catatan</label>
-                        <textarea id="notes" rows="3" placeholder="Catatan khusus untuk pesanan..."></textarea>
+                        <textarea id="notes" rows="3" name="order_note" placeholder="Catatan khusus untuk pesanan..."></textarea>
                     </div>
 
                     <button type="button" class="btn btn-primary" onclick="addToCart()" style="width: 100%; margin-bottom: 10px;">
@@ -520,6 +521,20 @@
             <div class="card">
                 <h2>📊 Riwayat Transaksi</h2>
                 <div class="transaction-list" id="transactionHistory">
+                    @foreach ($orders as $order)
+                    <div class="transaction-item">
+                        <h4>{{ $order->code }} - {{ $order->customer->customer_name }}</h4>
+                        <p>📞 {{ $order->customer->phone }}</p>
+                        <p>🛍️ 
+                            @foreach ($order->details as $detail)
+                            {{ $detail->service->service_name }} - {{ $detail->qty }} kg,
+                            @endforeach
+                        </p>
+                        <p>💰 Rp {{ $order->total }}</p>
+                        <p>📅 {{ $order->created_at }}</p>
+                        <span class="status-badge status-{{ $order->order_status }}">{{ $order->status_text }}</span>
+                    </div>
+                    @endforeach
                 </div>
 
                 <a href="{{ route('order.index') }}" style="text-decoration: none; color: white;">
@@ -549,9 +564,9 @@
         </div>
     </div>
 
-        {{-- <script>
+        <!-- <script>
             localStorage.clear();
-        </script> --}}
+        </script> -->
 
     <script>
         // Buat Tamplan data customer
@@ -712,8 +727,8 @@
         function updateStats() {
             const totalTransactions = transactions.length;
             const totalRevenue = transactions.reduce((sum, t) => sum + t.total, 0);
-            const activeOrders = transactions.filter(t => t.status !== 'delivered').length;
-            const completedOrders = transactions.filter(t => t.status === 'delivered').length;
+            const activeOrders = transactions.filter(t => t.status !== '1').length;
+            const completedOrders = transactions.filter(t => t.status === '1').length;
 
             document.getElementById('totalTransactions').textContent = totalTransactions;
             document.getElementById('totalRevenue').textContent = `Rp ${totalRevenue.toLocaleString('id-ID')}`;
@@ -916,7 +931,7 @@
             const priceService = parseInt(optionService.dataset.price);
             const weightValue = document.getElementById('serviceWeight').value;
             const weight = parseDecimal(weightValue);
-            const notes = document.getElementById('notes').value;
+            // const notes = document.getElementById('notes').value;
 
             if (!nameService || !weightValue || weight <= 0) {
                 alert('Mohon lengkapi semua field yang diperlukan!');
@@ -932,7 +947,6 @@
                 weight: weight,
                 price: priceService,
                 subtotal: subtotal,
-                notes: notes
             };
 
             cart.push(item);
@@ -941,7 +955,6 @@
             // Clear form
             document.getElementById('serviceType').value = '';
             document.getElementById('serviceWeight').value = '';
-            document.getElementById('notes').value = '';
         }
 
         // Update cart display to show decimal properly

@@ -26,10 +26,15 @@ class TransOrderController extends Controller
      */
     public function create()
     {
+        $today = Carbon::now()->format('dmY');
+        $countDay = TransOrders::whereDate('created_at', now())->count() + 1;
+        $runningNumber = str_pad($countDay, 3, '0', STR_PAD_LEFT);
+        $code = 'TR-' . $today . '-' . $runningNumber;
         $title = "Transaction Order";
         $customers = Customers::orderBy('id', 'desc')->get();
         $services = TypeOfServices::orderBy('id', 'desc')->get();
-        return view('order.create', compact('title', 'customers', 'services'));
+        $orders = TransOrders::with(['customer', 'details.service'])->orderBy('id', 'desc')->get();
+        return view('order.create', compact('title', 'code', 'customers', 'services', 'orders'));
 
     }
 
@@ -57,10 +62,6 @@ class TransOrderController extends Controller
         //         'total' => 'required|numeric'
         //     ]);
         // }
-        $today = Carbon::now()->format('dmY');
-        $countDay = TransOrders::whereDate('created_at', now())->count() + 1;
-        $runningNumber = str_pad($countDay, 3, '0', STR_PAD_LEFT);
-        $code = 'TR-' . $today . '-' . $runningNumber;
 
         if (empty($request->total)) {
             Alert::error('Oops...', 'Please Add Service Packet');
@@ -69,8 +70,8 @@ class TransOrderController extends Controller
 
         $order = TransOrders::create([
             'id_customer' => $request->id_customer,
-            'order_code' => $code,
-            'order_end_date' => $request->order_end_date,
+            'order_code' => $request->order_code,
+            'order_end_date' => Carbon::now()->addDays(2),
             'order_note' => $request->order_note,
             'total' => $request->total
         ]);
@@ -143,5 +144,14 @@ class TransOrderController extends Controller
         $order->delete();
         toast('Delete data order successfully', 'success');
         return redirect()->route('order.index')->with('success', 'Delete data order successfully');
+    }
+
+    public function printStruk(string $id)
+    {
+        $details = TransOrders::with(['customer', 'details.service'])->where('id', $id)->first();
+        // debuging
+        // return $details;
+        // dd($details);
+        return view('order.print', compact('details'));
     }
 }
